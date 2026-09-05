@@ -32,9 +32,24 @@ grep -Fxq 'scmi-cpufreq' "$matching/modules-load.d/yoga-slim7x.conf" ||
 grep -Fxq 'MODULES+=(i2c-hid-of qrtr ps883x pmic_glink_altmode)' \
   "$matching/mkinitcpio.conf.d/yoga-slim7x-initramfs.conf" ||
   fail "Yoga Slim 7x setup initializes the keyboard and display in the initramfs"
-grep -Fq '/usr/lib/firmware/qcom/gen70500_sqe.fw' \
-  "$matching/mkinitcpio.conf.d/yoga-slim7x-initramfs.conf" ||
-  fail "Yoga Slim 7x setup includes its display firmware in the initramfs"
+(
+  firmware_root="$scratch/firmware"
+  mkdir -p "$firmware_root/qcom" "$firmware_root/updates/qcom/x1e80100/LENOVO/83ED"
+  touch "$firmware_root/qcom/gen70500_sqe.fw.zst" \
+    "$firmware_root/qcom/gen70500_gmu.bin.xz" \
+    "$firmware_root/updates/qcom/gen70500_sqe.fw" \
+    "$firmware_root/updates/qcom/x1e80100/LENOVO/83ED/qcdxkmsuc8380.mbn"
+  MODULES=() FILES=()
+  OMARCHY_YOGA_FIRMWARE_ROOT="$firmware_root" \
+    source "$matching/mkinitcpio.conf.d/yoga-slim7x-initramfs.conf"
+  [[ ${MODULES[*]} == "i2c-hid-of qrtr ps883x pmic_glink_altmode" ]] ||
+    fail "the generated config loads the keyboard and display modules"
+  [[ ${#FILES[@]} == 3 ]] || fail "all available display firmware is included"
+  [[ ${FILES[0]} == "$firmware_root/updates/qcom/gen70500_sqe.fw" ]] ||
+    fail "extracted firmware takes precedence over packaged firmware"
+  [[ ${FILES[1]} == "$firmware_root/qcom/gen70500_gmu.bin.xz" ]] ||
+    fail "compressed display firmware is included"
+)
 grep -Fxq 'KERNEL_CMDLINE[default]+=" initcall_blacklist=simpledrm_platform_driver_init"' \
   "$matching/limine-entry-tool.d/yoga-slim7x.conf" ||
   fail "Yoga Slim 7x setup defers display ownership to the native driver"

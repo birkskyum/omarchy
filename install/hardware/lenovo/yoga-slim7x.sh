@@ -26,12 +26,20 @@ if omarchy-hw-qualcomm-soc &&
 MODULES+=(i2c-hid-of qrtr ps883x pmic_glink_altmode)
 
 for firmware in \
-  /usr/lib/firmware/qcom/gen70500_sqe.fw \
-  /usr/lib/firmware/qcom/gen70500_gmu.bin \
-  /usr/lib/firmware/qcom/x1e80100/LENOVO/83ED/qcdxkmsuc8380.mbn; do
-  [[ -f $firmware ]] && FILES+=("$firmware")
+  qcom/gen70500_sqe.fw \
+  qcom/gen70500_gmu.bin \
+  qcom/x1e80100/LENOVO/83ED/qcdxkmsuc8380.mbn; do
+  for directory in "${OMARCHY_YOGA_FIRMWARE_ROOT:-/usr/lib/firmware}/updates" \
+    "${OMARCHY_YOGA_FIRMWARE_ROOT:-/usr/lib/firmware}"; do
+    for suffix in '' .zst .xz; do
+      if [[ -f $directory/$firmware$suffix ]]; then
+        FILES+=("$directory/$firmware$suffix")
+        break 2
+      fi
+    done
+  done
 done
-unset firmware
+unset firmware directory suffix
 CONF
 
   mkdir -p "$limine_config_dir"
