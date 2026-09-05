@@ -53,6 +53,14 @@ grep -Fxq 'MODULES+=(i2c-hid-of qrtr ps883x pmic_glink_altmode)' \
 grep -Fxq 'KERNEL_CMDLINE[default]+=" initcall_blacklist=simpledrm_platform_driver_init"' \
   "$matching/limine-entry-tool.d/yoga-slim7x.conf" ||
   fail "Yoga Slim 7x setup defers display ownership to the native driver"
+(
+  declare -A KERNEL_CMDLINE=([default]="root=/dev/mapper/root quiet splash")
+  source "$matching/limine-entry-tool.d/yoga-slim7x.conf"
+  [[ " ${KERNEL_CMDLINE[default]} " == *" console=tty0 "* ]] ||
+    fail "Yoga Slim 7x uses the laptop console for graphical disk unlock"
+  [[ ${KERNEL_CMDLINE[default]} == "root=/dev/mapper/root quiet splash "* ]] ||
+    fail "Yoga Slim 7x preserves the existing boot parameters"
+)
 grep -Fq 'ConditionPathExists=!/etc/modprobe.d/qualcomm-adsp-nofw.conf' \
   "$matching/systemd/yoga-slim7x-remoteprocs.service" ||
   fail "Yoga Slim 7x skips DSP startup when the generic firmware leaf blacklists it"
