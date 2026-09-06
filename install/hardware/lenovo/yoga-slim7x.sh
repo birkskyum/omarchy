@@ -25,13 +25,13 @@ if omarchy-hw-qualcomm-soc &&
   cat >"$mkinitcpio_dir/yoga-slim7x-initramfs.conf" <<'CONF'
 MODULES+=(i2c-hid-of qrtr ps883x pmic_glink_altmode)
 
+# The board-signed zap shader is included by qcom-firmware-extract.
 for firmware in \
   qcom/gen70500_sqe.fw \
-  qcom/gen70500_gmu.bin \
-  qcom/x1e80100/LENOVO/83ED/qcdxkmsuc8380.mbn; do
-  for directory in "${OMARCHY_YOGA_FIRMWARE_ROOT:-/usr/lib/firmware}/updates" \
-    "${OMARCHY_YOGA_FIRMWARE_ROOT:-/usr/lib/firmware}"; do
-    for suffix in '' .zst .xz; do
+  qcom/gen70500_gmu.bin; do
+  for suffix in '' .zst .xz; do
+    for directory in "${OMARCHY_YOGA_FIRMWARE_ROOT:-/usr/lib/firmware}/updates" \
+      "${OMARCHY_YOGA_FIRMWARE_ROOT:-/usr/lib/firmware}"; do
       if [[ -f $directory/$firmware$suffix ]]; then
         FILES+=("$directory/$firmware$suffix")
         break 2
