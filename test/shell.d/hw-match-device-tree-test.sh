@@ -4,11 +4,11 @@ set -euo pipefail
 
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
-match="$ROOT/bin/omarchy-hw-dt-match"
+match="$ROOT/bin/omarchy-hw-match-device-tree"
 test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT
 
-bash -n "$match" || fail "hw-dt-match has valid syntax"
+bash -n "$match" || fail "hw-match-device-tree has valid syntax"
 
 # Root reads only the live device tree, as omarchy-hw-platform does.
 if (( EUID != 0 )) && unshare --user --map-root-user true 2>/dev/null; then
@@ -33,34 +33,34 @@ on_surface() {
   OMARCHY_PROC_ROOT="$surface/proc" "$match" "$@"
 }
 
-on_surface microsoft,denali-oled || fail "hw-dt-match finds the first compatible string"
-on_surface qcom,x1e80100 || fail "hw-dt-match finds a later compatible string"
-on_surface MICROSOFT,Denali-OLED || fail "hw-dt-match ignores case"
-on_surface asus,zenbook-a16-ux3607oa microsoft,denali-oled || fail "hw-dt-match accepts any of several strings"
-pass "hw-dt-match finds a compatible string"
+on_surface microsoft,denali-oled || fail "hw-match-device-tree finds the first compatible string"
+on_surface qcom,x1e80100 || fail "hw-match-device-tree finds a later compatible string"
+on_surface MICROSOFT,Denali-OLED || fail "hw-match-device-tree ignores case"
+on_surface asus,zenbook-a16-ux3607oa microsoft,denali-oled || fail "hw-match-device-tree accepts any of several strings"
+pass "hw-match-device-tree finds a compatible string"
 
 # A Turkish locale lowercases I to a dotless i, which matches nothing.
 turkish=$(locale -a 2>/dev/null | grep -i -m1 -E '^tr_TR\.utf-?8$' || true)
 if [[ -n $turkish ]]; then
   LC_ALL=$turkish on_surface MICROSOFT,DENALI-OLED ||
-    fail "hw-dt-match ignores case in a Turkish locale"
-  pass "hw-dt-match ignores case in a Turkish locale"
+    fail "hw-match-device-tree ignores case in a Turkish locale"
+  pass "hw-match-device-tree ignores case in a Turkish locale"
 else
   skip "no Turkish locale installed; skipping the locale probe"
 fi
 
 for other in microsoft,denali-lcd microsoft,denali-ole denali-oled 'microsoft,denali.oled' 'microsoft,*' ''; do
   if on_surface "$other"; then
-    fail "hw-dt-match matches whole strings only" "matched: '$other'"
+    fail "hw-match-device-tree matches whole strings only" "matched: '$other'"
   fi
 done
 if on_surface; then
-  fail "hw-dt-match matches nothing without a string"
+  fail "hw-match-device-tree matches nothing without a string"
 fi
 if on_surface --help; then
-  fail "hw-dt-match treats an option-shaped string literally"
+  fail "hw-match-device-tree treats an option-shaped string literally"
 fi
-pass "hw-dt-match matches whole strings only"
+pass "hw-match-device-tree matches whole strings only"
 
 # The sysfs path serves when only that fixture root is named, and a fixture
 # without a device tree (an ACPI machine) never falls back to the live one.
@@ -68,13 +68,13 @@ sysfs="$test_tmp/sysfs"
 mkdir -p "$sysfs/sys/firmware/devicetree/base" "$test_tmp/acpi/proc"
 printf '%s\0' asus,zenbook-a16-ux3607oa qcom,glymur >"$sysfs/sys/firmware/devicetree/base/compatible"
 OMARCHY_SYS_ROOT="$sysfs/sys" "$match" asus,zenbook-a16-ux3607oa ||
-  fail "hw-dt-match reads the sysfs device tree fixture"
+  fail "hw-match-device-tree reads the sysfs device tree fixture"
 OMARCHY_PROC_ROOT="$test_tmp/acpi/proc" OMARCHY_SYS_ROOT="$sysfs/sys" "$match" asus,zenbook-a16-ux3607oa ||
-  fail "hw-dt-match falls back to sysfs when procfs shows no device tree"
+  fail "hw-match-device-tree falls back to sysfs when procfs shows no device tree"
 if OMARCHY_PROC_ROOT="$test_tmp/acpi/proc" "$match" asus,zenbook-a16-ux3607oa microsoft,denali-oled qcom,x1e80100; then
-  fail "hw-dt-match finds nothing on a machine without a device tree"
+  fail "hw-match-device-tree finds nothing on a machine without a device tree"
 fi
 if OMARCHY_IMAGE_ROOT="$test_tmp/acpi" "$match" asus,zenbook-a16-ux3607oa microsoft,denali-oled qcom,x1e80100; then
-  fail "hw-dt-match reads no live device tree when an image root is named"
+  fail "hw-match-device-tree reads no live device tree when an image root is named"
 fi
-pass "hw-dt-match follows the fixture roots"
+pass "hw-match-device-tree follows the fixture roots"
