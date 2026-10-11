@@ -59,6 +59,8 @@ mkdir -p "$sysfs/sys/firmware/devicetree/base" "$test_tmp/acpi/proc"
 printf '%s\0' asus,zenbook-a16-ux3607oa qcom,glymur >"$sysfs/sys/firmware/devicetree/base/compatible"
 OMARCHY_SYS_ROOT="$sysfs/sys" "$match" asus,zenbook-a16-ux3607oa ||
   fail "hw-dt-match reads the sysfs device tree fixture"
+OMARCHY_PROC_ROOT="$test_tmp/acpi/proc" OMARCHY_SYS_ROOT="$sysfs/sys" "$match" asus,zenbook-a16-ux3607oa ||
+  fail "hw-dt-match falls back to sysfs when procfs shows no device tree"
 if OMARCHY_PROC_ROOT="$test_tmp/acpi/proc" "$match" asus,zenbook-a16-ux3607oa microsoft,denali-oled qcom,x1e80100; then
   fail "hw-dt-match finds nothing on a machine without a device tree"
 fi
