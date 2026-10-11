@@ -39,6 +39,16 @@ on_surface MICROSOFT,Denali-OLED || fail "hw-dt-match ignores case"
 on_surface asus,zenbook-a16-ux3607oa microsoft,denali-oled || fail "hw-dt-match accepts any of several strings"
 pass "hw-dt-match finds a compatible string"
 
+# A Turkish locale lowercases I to a dotless i, which matches nothing.
+turkish=$(locale -a 2>/dev/null | grep -i -m1 -E '^tr_TR\.utf-?8$' || true)
+if [[ -n $turkish ]]; then
+  LC_ALL=$turkish on_surface MICROSOFT,DENALI-OLED ||
+    fail "hw-dt-match ignores case in a Turkish locale"
+  pass "hw-dt-match ignores case in a Turkish locale"
+else
+  skip "no Turkish locale installed; skipping the locale probe"
+fi
+
 for other in microsoft,denali-lcd microsoft,denali-ole denali-oled 'microsoft,denali.oled' 'microsoft,*' ''; do
   if on_surface "$other"; then
     fail "hw-dt-match matches whole strings only" "matched: '$other'"

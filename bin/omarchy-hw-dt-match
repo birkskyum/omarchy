@@ -3,6 +3,10 @@
 # omarchy:summary=Match against the device tree's top-level compatible strings (whole string, case-insensitive).
 # omarchy:args=<compatibles...>
 
+# Bash folds case by the session's locale, and a Turkish one turns I into a
+# dotless i that no compatible string holds.
+LC_ALL=C
+
 # For models that omarchy-hw-match cannot tell apart because they share a DMI
 # name. Unprivileged tests fake the device tree with the fixture roots
 # omarchy-hw-platform reads; root reads only the live one.
