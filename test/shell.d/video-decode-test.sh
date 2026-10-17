@@ -91,6 +91,47 @@ run_helper "$home"
   fail "an hwdec after [default] counts as the user's global choice" "$(cat "$home/.config/mpv/mpv.conf")"
 pass "an hwdec after [default] counts as the user's global choice"
 
+home=$(new_home commented-headers)
+mkdir -p "$home/.config/mpv"
+printf '%s\n' '[software] # only on request' 'hwdec=no' >"$home/.config/mpv/mpv.conf"
+run_helper "$home"
+grep -Fxq -- "$hwdec" "$home/.config/mpv/mpv.conf" ||
+  fail "a profile line ending in a comment still starts a profile" "$(cat "$home/.config/mpv/mpv.conf")"
+home=$(new_home commented-default)
+mkdir -p "$home/.config/mpv"
+printf '%s\n' '[software]' 'hwdec=no' '[default] # back to global' 'hwdec=auto' >"$home/.config/mpv/mpv.conf"
+run_helper "$home"
+[[ $(cat "$home/.config/mpv/mpv.conf") == $'[software]\nhwdec=no\n[default] # back to global\nhwdec=auto' ]] ||
+  fail "a [default] line ending in a comment returns to global options" "$(cat "$home/.config/mpv/mpv.conf")"
+pass "profile and [default] lines ending in a comment are recognised"
+
+home=$(new_home shared-lines)
+printf '%s\n' '--enable-features=Foo --ozone-platform=wayland # mine' '# --use-angle=vulkan' >"$home/.config/chromium-flags.conf"
+run_helper "$home"
+[[ $(cat "$home/.config/chromium-flags.conf") == $'--enable-features=Foo,AcceleratedVideoDecoder --ozone-platform=wayland # mine\n# --use-angle=vulkan\n--use-angle=gles-egl' ]] ||
+  fail "switches sharing a line or commented out are handled as Chromium reads them" "$(cat "$home/.config/chromium-flags.conf")"
+home=$(new_home inline-angle)
+printf '%s\n' '--ozone-platform=wayland --use-angle=vulkan' '--enable-features=AcceleratedVideoDecoder<Trial' >"$home/.config/chromium-flags.conf"
+run_helper "$home"
+[[ $(cat "$home/.config/chromium-flags.conf") == $'--ozone-platform=wayland --use-angle=vulkan\n--enable-features=AcceleratedVideoDecoder<Trial' ]] ||
+  fail "a --use-angle mid-line and a feature with a trial stay as they are" "$(cat "$home/.config/chromium-flags.conf")"
+home=$(new_home crlf)
+printf '%s\r\n' '--enable-features=Foo' >"$home/.config/chromium-flags.conf"
+run_helper "$home"
+[[ $(head -n1 "$home/.config/chromium-flags.conf") == $'--enable-features=Foo,AcceleratedVideoDecoder\r' ]] ||
+  fail "a CRLF line gets the feature ahead of its line ending" "$(od -c "$home/.config/chromium-flags.conf" | head -3)"
+pass "Chromium switches are found and extended as its launcher reads them"
+
+home=$(new_home mpv-unwritable)
+cp "$shipped" "$home/.config/chromium-flags.conf"
+mkdir -p "$home/.config/mpv/mpv.conf/blocked"
+if run_helper "$home" 2>/dev/null; then
+  fail "a config that can't be written makes the helper fail"
+fi
+grep -Fxq -- "$features,AcceleratedVideoDecoder" "$home/.config/chromium-flags.conf" ||
+  fail "an mpv config that can't be written doesn't hold back Chromium" "$(cat "$home/.config/chromium-flags.conf")"
+pass "an mpv config that can't be written fails the helper but doesn't hold back Chromium"
+
 home=$(new_home bare)
 printf '%s' '--ozone-platform=wayland' >"$home/.config/chromium-flags.conf"
 run_helper "$home"

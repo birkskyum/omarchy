@@ -25,13 +25,20 @@ setup_mpv() {
   fi
 }
 
-# Options before the first [profile] and after a [default] line are global.
+# Options before the first [profile] and after a [default] line are global. A
+# profile line may end in a comment.
 has_global_hwdec() {
   awk '
-    /^[[:space:]]*\[[^]]*\][[:space:]]*$/ { global = ($0 ~ /^[[:space:]]*\[default\][[:space:]]*$/); next }
+    /^[[:space:]]*\[[^]]*\][[:space:]]*(#.*)?$/ { global = ($0 ~ /^[[:space:]]*\[default\][[:space:]]*(#.*)?$/); next }
     global && /^[[:space:]]*hwdec[[:space:]]*=/ { found = 1 }
     END { exit !found }
   ' global=1 "$1"
+}
+
+# Chromium's launcher splits each line into arguments, so a switch can share a
+# line with others or end in a comment. Look for switches with comments removed.
+chromium_args() {
+  sed -E 's/(^|[[:space:]])#.*$//' "$1"
 }
 
 # A --use-angle the user set stays as it is.
@@ -39,24 +46,30 @@ setup_chromium() {
   local conf=~/.config/chromium-flags.conf
   [[ -f $conf ]] || return 0
 
-  if ! grep -q -- '^--use-angle=' "$conf"; then
+  if ! chromium_args "$conf" | grep -E -- '(^|[[:space:]])--use-angle=' >/dev/null; then
     [[ -n $(tail -c1 "$conf") ]] && echo >>"$conf"
     echo '--use-angle=gles-egl' >>"$conf"
   fi
 
-  if ! grep -Eq -- '^--enable-features=([^,]+,)*AcceleratedVideoDecoder([,:]|$)' "$conf"; then
-    if grep -q -- '^--enable-features=' "$conf"; then
-      sed -i --follow-symlinks \
-        -e '/^--enable-features=/ s/$/,AcceleratedVideoDecoder/' \
-        -e '/^--enable-features=/ s/=,/=/' "$conf"
-    else
-      [[ -n $(tail -c1 "$conf") ]] && echo >>"$conf"
-      echo '--enable-features=AcceleratedVideoDecoder' >>"$conf"
-    fi
+  if chromium_args "$conf" | grep -E -- '(^|[[:space:]])--enable-features=([^[:space:]]*,)?AcceleratedVideoDecoder([,:<[:space:]]|$)' >/dev/null; then
+    return 0
+  fi
+
+  if chromium_args "$conf" | grep -E -- '(^|[[:space:]])--enable-features=' >/dev/null; then
+    # Extend the feature list itself, ahead of any neighbouring switch or comment.
+    sed -i --follow-symlinks -E \
+      -e 's/^(([^#]*[[:space:]])?--enable-features=[^[:space:]#]*)/\1,AcceleratedVideoDecoder/' \
+      -e 's/--enable-features=,AcceleratedVideoDecoder/--enable-features=AcceleratedVideoDecoder/' "$conf"
+  else
+    [[ -n $(tail -c1 "$conf") ]] && echo >>"$conf"
+    echo '--enable-features=AcceleratedVideoDecoder' >>"$conf"
   fi
 }
 
 if omarchy-hw-aarch64-qualcomm; then
-  setup_mpv
-  setup_chromium
+  # A config that can't be written for one program doesn't hold back the other.
+  status=0
+  setup_mpv || status=$?
+  setup_chromium || status=$?
+  exit "$status"
 fi
