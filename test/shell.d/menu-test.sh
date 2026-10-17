@@ -299,11 +299,12 @@ assert(!defaultById['install.ai.crush'], 'menu removes Crush from Install > AI')
 // Software you already have keeps its place in Install, dimmed rather than
 // dropped, so the list reads as a catalog of what Omarchy can install.
 // Chromium Account is the sole Install row with anything left to hide for. The
-// Windows VM, whose guest can't run elsewhere, and the installers whose vendors
-// ship Linux builds for x86_64 alone hide only off x86_64, so any other `when:`
-// here is a row that went back to vanishing once installed.
+// Windows VM, whose guest can't run elsewhere, and the installers that need
+// x86_64 binaries (vendor builds for x86_64 alone, Windows games under Wine)
+// hide only off x86_64, so any other `when:` here is a row that went back to
+// vanishing once installed.
 const windowsGuard = 'omarchy-hw-x86'
-const x86OnlyInstalls = ['install.windows', 'install.browser.edge', 'install.service.dropbox', 'install.service.spotify', 'install.gaming.minecraft', 'install.gaming.heroic']
+const x86OnlyInstalls = ['install.windows', 'install.browser.edge', 'install.service.dropbox', 'install.service.spotify', 'install.gaming.minecraft', 'install.gaming.heroic', 'install.gaming.geforce-now', 'install.gaming.battlenet', 'install.gaming.lutris']
 assertDeepEqual(
   defaultItems
     .filter(item => item.id.startsWith('install.') && item.action && item.when)
