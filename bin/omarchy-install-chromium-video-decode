@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# omarchy:summary=Let Chromium decode video on the video chip of Snapdragon laptops
+
+set -euo pipefail
+
+# Arch Linux ARM builds Chromium with the V4L2 decoder for the Snapdragon video
+# chip, but Chromium only turns it on with ANGLE on GLES and the
+# AcceleratedVideoDecoder feature. Other machines keep Chromium's defaults.
+omarchy-hw-aarch64-qualcomm || exit 0
+
+conf=~/.config/chromium-flags.conf
+[[ -f $conf ]] || exit 0
+
+# A --use-angle the user set stays as it is.
+if ! grep -q -- '^--use-angle=' "$conf"; then
+  [[ -n $(tail -c1 "$conf") ]] && echo >>"$conf"
+  echo '--use-angle=gles-egl' >>"$conf"
+fi
+
+if ! grep -Eq -- '^--enable-features=([^,]+,)*AcceleratedVideoDecoder([,:]|$)' "$conf"; then
+  if grep -q -- '^--enable-features=' "$conf"; then
+    sed -i --follow-symlinks \
+      -e '/^--enable-features=/ s/$/,AcceleratedVideoDecoder/' \
+      -e '/^--enable-features=/ s/=,/=/' "$conf"
+  else
+    [[ -n $(tail -c1 "$conf") ]] && echo >>"$conf"
+    echo '--enable-features=AcceleratedVideoDecoder' >>"$conf"
+  fi
+fi
