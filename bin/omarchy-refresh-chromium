@@ -20,7 +20,7 @@ omarchy-install-chromium-copy-url
 omarchy-install-chromium-ytdlp
 
 # Put the Snapdragon video decoding flags back
-omarchy-install-chromium-video-decode
+omarchy-install-video-decode
 
 # Re-install Google accounts if previously configured
 if [[ $INSTALL_GOOGLE_ACCOUNTS == "true" ]]; then

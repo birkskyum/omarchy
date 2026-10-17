@@ -1,3 +1,3 @@
-echo "Let Chromium decode video on the video chip of Snapdragon laptops"
+echo "Let mpv and Chromium decode video on the video chip of Snapdragon laptops"
 
-omarchy-install-chromium-video-decode
+omarchy-install-video-decode
