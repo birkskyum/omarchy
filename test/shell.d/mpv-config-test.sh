@@ -25,8 +25,8 @@ stock=$(configured_hwdec)
 [[ $stock == "no" ]] || fail "mpv's own default is software decoding" "got: $stock"
 
 shipped=$(configured_hwdec --include="$ROOT/etc/mpv/mpv.conf")
-[[ $shipped == "auto-safe" ]] || fail "the shipped system config turns on safe hardware decoding" "got: $shipped"
-pass "the shipped system config turns on safe hardware decoding"
+[[ $shipped == "auto-safe,v4l2m2m-copy" ]] || fail "the shipped system config turns on safe hardware decoding, then a V4L2 decoder" "got: $shipped"
+pass "the shipped system config turns on safe hardware decoding, then a V4L2 decoder"
 
 # mpv reads /etc/mpv/mpv.conf before ~/.config/mpv/mpv.conf, so a user's choice wins.
 echo "hwdec=no" >"$test_dir/user.conf"
