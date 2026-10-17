@@ -18,7 +18,7 @@ setup_mpv() {
   local hwdec='hwdec=auto-safe,v4l2m2m-copy'
 
   if [[ ! -s $conf ]]; then
-    mkdir -p ~/.config/mpv
+    mkdir -p ~/.config/mpv || return
     printf '%s\n' "$comment" "$hwdec" >"$conf"
   elif ! has_global_hwdec "$conf"; then
     sed -i --follow-symlinks "1i $comment\n$hwdec" "$conf"
@@ -41,14 +41,21 @@ chromium_args() {
   sed -E 's/(^|[[:space:]])#.*$//' "$1"
 }
 
+# Add a line, starting a new one first if the file doesn't end in a newline.
+append_line() {
+  if [[ -n $(tail -c1 "$1") ]]; then
+    echo >>"$1" || return
+  fi
+  printf '%s\n' "$2" >>"$1"
+}
+
 # A --use-angle the user set stays as it is.
 setup_chromium() {
   local conf=~/.config/chromium-flags.conf
   [[ -f $conf ]] || return 0
 
   if ! chromium_args "$conf" | grep -E -- '(^|[[:space:]])--use-angle=' >/dev/null; then
-    [[ -n $(tail -c1 "$conf") ]] && echo >>"$conf"
-    echo '--use-angle=gles-egl' >>"$conf"
+    append_line "$conf" '--use-angle=gles-egl' || return
   fi
 
   if chromium_args "$conf" | grep -E -- '(^|[[:space:]])--enable-features=([^[:space:]]*,)?AcceleratedVideoDecoder([,:<[:space:]]|$)' >/dev/null; then
@@ -61,13 +68,14 @@ setup_chromium() {
       -e 's/^(([^#]*[[:space:]])?--enable-features=[^[:space:]#]*)/\1,AcceleratedVideoDecoder/' \
       -e 's/--enable-features=,AcceleratedVideoDecoder/--enable-features=AcceleratedVideoDecoder/' "$conf"
   else
-    [[ -n $(tail -c1 "$conf") ]] && echo >>"$conf"
-    echo '--enable-features=AcceleratedVideoDecoder' >>"$conf"
+    append_line "$conf" '--enable-features=AcceleratedVideoDecoder'
   fi
 }
 
 if omarchy-hw-aarch64-qualcomm; then
   # A config that can't be written for one program doesn't hold back the other.
+  # Running them under || turns set -e off inside, so each write returns its
+  # own failure.
   status=0
   setup_mpv || status=$?
   setup_chromium || status=$?

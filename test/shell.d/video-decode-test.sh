@@ -132,6 +132,18 @@ grep -Fxq -- "$features,AcceleratedVideoDecoder" "$home/.config/chromium-flags.c
   fail "an mpv config that can't be written doesn't hold back Chromium" "$(cat "$home/.config/chromium-flags.conf")"
 pass "an mpv config that can't be written fails the helper but doesn't hold back Chromium"
 
+if (( EUID == 0 )); then
+  skip "a Chromium flags file that can't be written fails the helper (root writes read-only files)"
+else
+  home=$(new_home chromium-readonly)
+  printf '%s\n' '--enable-features=AcceleratedVideoDecoder' >"$home/.config/chromium-flags.conf"
+  chmod 0444 "$home/.config/chromium-flags.conf"
+  if run_helper "$home" 2>/dev/null; then
+    fail "a Chromium flags file that can't be written fails the helper, even when the feature is already there"
+  fi
+  pass "a Chromium flags file that can't be written fails the helper, even when the feature is already there"
+fi
+
 home=$(new_home bare)
 printf '%s' '--ozone-platform=wayland' >"$home/.config/chromium-flags.conf"
 run_helper "$home"
