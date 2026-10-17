@@ -74,6 +74,23 @@ mapfile -t lines <"$home/.config/mpv/mpv.conf"
   fail "the mpv fallback goes on top, outside any profile" "$(cat "$home/.config/mpv/mpv.conf")"
 pass "the mpv fallback goes on top, outside any profile"
 
+home=$(new_home profile-hwdec)
+mkdir -p "$home/.config/mpv"
+printf '%s\n' '[software]' 'hwdec=no' >"$home/.config/mpv/mpv.conf"
+run_helper "$home"
+mapfile -t lines <"$home/.config/mpv/mpv.conf"
+[[ ${lines[1]} == "$hwdec" && ${lines[2]} == '[software]' && ${lines[3]} == 'hwdec=no' ]] ||
+  fail "an hwdec inside a profile still gets the global fallback on top" "$(cat "$home/.config/mpv/mpv.conf")"
+pass "an hwdec inside a profile still gets the global fallback on top"
+
+home=$(new_home default-hwdec)
+mkdir -p "$home/.config/mpv"
+printf '%s\n' '[software]' 'hwdec=no' '[default]' 'hwdec=auto' >"$home/.config/mpv/mpv.conf"
+run_helper "$home"
+[[ $(cat "$home/.config/mpv/mpv.conf") == $'[software]\nhwdec=no\n[default]\nhwdec=auto' ]] ||
+  fail "an hwdec after [default] counts as the user's global choice" "$(cat "$home/.config/mpv/mpv.conf")"
+pass "an hwdec after [default] counts as the user's global choice"
+
 home=$(new_home bare)
 printf '%s' '--ozone-platform=wayland' >"$home/.config/chromium-flags.conf"
 run_helper "$home"
