@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# omarchy:summary=Check that every disk swap a hibernation image can go to is encrypted
+
+swaps=$(swapon --show=NAME --noheadings --raw | grep -v '^/dev/zram')
+[[ -n $swaps ]] || exit 1
+
+while read -r swap; do
+  device=$swap
+  [[ -f $swap ]] && device=$(findmnt -no SOURCE -T "$swap" | sed 's/\[.*//')
+  lsblk -nsrpo FSTYPE "$device" 2>/dev/null | grep -qx "crypto_LUKS" || exit 1
+done <<<"$swaps"

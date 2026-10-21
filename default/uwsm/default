@@ -11,8 +11,8 @@ export TERMINAL=xdg-terminal-exec
 export EDITOR="omarchy-launch-editor --inline"
 
 # Bitwarden keeps its key in memfd_secret memory, which turns hibernation off while it runs.
-# With / on LUKS the hibernation image is encrypted too, so let it use locked memory instead.
-if lsblk -nsrpo FSTYPE "$(findmnt -no SOURCE / | sed 's/\[.*//')" 2>/dev/null | grep -qx crypto_LUKS; then
+# When every swap a hibernation image can go to is encrypted, let it use locked memory instead.
+if omarchy-hibernation-encrypted; then
   export SECURE_KEY_CONTAINER_BACKEND=${SECURE_KEY_CONTAINER_BACKEND:-mlock}
 fi
 
