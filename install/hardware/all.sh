@@ -83,6 +83,7 @@ run_logged "$OMARCHY_INSTALL/hardware/lenovo/ideapad-slim-5x.sh"
 run_logged "$OMARCHY_INSTALL/hardware/microsoft/surface-pro-11.sh"
 run_logged "$OMARCHY_INSTALL/hardware/microsoft/surface-laptop-7.sh"
 run_logged "$OMARCHY_INSTALL/hardware/microsoft/surface-laptop8.sh"
+run_logged "$OMARCHY_INSTALL/hardware/microsoft/surface-pro-x.sh"
 run_logged "$OMARCHY_INSTALL/hardware/samsung/galaxy-book4-edge-14.sh"
 
 run_logged "$OMARCHY_INSTALL/hardware/fix-bcm43xx.sh"
